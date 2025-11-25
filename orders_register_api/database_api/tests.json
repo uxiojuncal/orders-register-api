@@ -1,0 +1,30 @@
+{
+  "create_order": {
+    "method": "POST",
+    "url": "http://localhost:8000/api/orders/",
+    "body": {
+      "date": "2025-11-25T14:30:00",
+      "customer_name": "Juan Pérez",
+      "customer_phone": 612345678,
+      "receiver_name": "María García",
+      "receiver_phone": 698765432,
+      "product_name": "Laptop Dell XPS 15",
+      "address": "Calle Mayor 45, 3º B, 28013 Madrid",
+      "comments": "Llamar antes de entregar",
+      "status": "pendiente"
+    }
+  },
+  "search_order_by_id": {
+    "method": "GET",
+    "url": "http://localhost:8000/api/orders/search/?id=1",
+    "body": null
+  },
+  "update_order": {
+    "method": "PATCH",
+    "url": "http://localhost:8000/api/orders/1/",
+    "body": {
+      "status": "entregado",
+      "comments": "Entregado en mano a María García"
+    }
+  }
+}
