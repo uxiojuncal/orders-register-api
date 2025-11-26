@@ -1,7 +1,7 @@
 {
   "create_order": {
     "method": "POST",
-    "url": "http://localhost:8000/api/orders/",
+    "url": "http://localhost:3000/api/orders/",
     "body": {
       "date": "2025-11-25T14:30:00",
       "customer_name": "Juan Pérez",
@@ -16,12 +16,12 @@
   },
   "search_order_by_id": {
     "method": "GET",
-    "url": "http://localhost:8000/api/orders/search/?id=1",
+    "url": "http://localhost:3000/api/orders/search/?id=1",
     "body": null
   },
   "update_order": {
     "method": "PATCH",
-    "url": "http://localhost:8000/api/orders/1/",
+    "url": "http://localhost:3000/api/orders/1/",
     "body": {
       "status": "entregado",
       "comments": "Entregado en mano a María García"

@@ -1,8 +1,10 @@
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from .models import Order
 import json
 from django.shortcuts import get_object_or_404
 
+@csrf_exempt
 def create_order(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -29,6 +31,7 @@ def create_order(request):
 
     return JsonResponse({'order_id': order.pk}, status=201)
 
+@csrf_exempt
 def update_order(request, pk):
     if request.method not in ('PATCH', 'PUT'):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
