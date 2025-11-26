@@ -9,6 +9,7 @@ class Order(models.Model):
     product_name = models.CharField(max_length=255)
     address = models.TextField()
     comments = models.TextField(blank=True, null=True)
+    signature = models.ImageField(upload_to='../media/signatures/', blank=True, null=True)
 
     class Status(models.TextChoices):
         PENDING = 'pendiente', 'Pendiente'

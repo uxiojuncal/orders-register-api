@@ -6,17 +6,23 @@ from django.shortcuts import get_object_or_404
 
 @csrf_exempt
 def create_order(request):
+    # Check for correct HTTP method
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    # Try to parse JSON payload
     try:
         payload = json.loads(request.body.decode() or '{}')
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    required_fields = ['date', 'customer_name', 'customer_phone', 'receiver_name', 'product_name', 'address']
+    
+    # Check for required fields
+    required_fields = ['receiver_name','address', 'receiver_phone']
     for field in required_fields:
         if field not in payload:
             return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
         
+    # Create the order    
     order = Order.objects.create(
         date=payload['date'],
         customer_name=payload['customer_name'],
@@ -33,14 +39,17 @@ def create_order(request):
 
 @csrf_exempt
 def update_order(request, pk):
+    # Check for correct HTTP method
     if request.method not in ('PATCH', 'PUT'):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+    # Try to parse JSON payload
     try:
         payload = json.loads(request.body.decode() or '{}')
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
+    # Retrieve the order or return 404
     order = get_object_or_404(Order, pk=pk)
 
     allowed_fields = {
@@ -48,6 +57,10 @@ def update_order(request, pk):
         'product_name', 'address', 'comments', 'status'
     }
 
+    if payload.get('status') == Order.Status.DELIVERED:
+        pass
+
+    # Update only allowed fields
     for field, value in payload.items():
         if field in allowed_fields:
             setattr(order, field, value)
@@ -68,14 +81,21 @@ def update_order(request, pk):
     return JsonResponse({'order': data})
 
 def search_orders(request):
+    # Check for correct HTTP method
     if request.method != 'GET':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
-
+    
+    # Initialize empty queryset
     orders = Order.objects.none()
 
+    # Apply filters based on query parameters
     if any(request.GET.values()):
         orders = Order.objects.all()
 
+        if status := request.GET.get('status'):
+            orders = orders.filter(status=status)
+        if receiver_name := request.GET.get('receiver_name'):
+            orders = orders.filter(receiver_name__icontains=receiver_name)
         if customer_name := request.GET.get('customer_name'):
             orders = orders.filter(customer_name__icontains=customer_name)
         if status := request.GET.get('status'):
