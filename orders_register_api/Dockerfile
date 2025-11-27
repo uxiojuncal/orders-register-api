@@ -41,6 +41,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Copy the source code into the container.
 COPY . .
 
+# REMOVE ALL PYTHON CACHE FILES
+RUN find . -type d -name __pycache__ -exec rm -r {} + || true
+RUN find . -type f -name '*.pyc' -delete || true
+
+
 # Create database directory with proper permissions
 RUN mkdir -p /app/db && \
     touch /app/db.sqlite3 && \

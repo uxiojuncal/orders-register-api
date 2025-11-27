@@ -32,7 +32,8 @@ def create_order(request):
         product_name=payload['product_name'],
         address=payload['address'],
         comments=payload.get('comments', ''),
-        status=payload.get('status', Order.Status.PENDING)
+        status=payload.get('status', Order.Status.PENDING),
+        signature=payload.get('signature', None)
     )
 
     return JsonResponse({'order_id': order.pk}, status=201)
@@ -53,12 +54,13 @@ def update_order(request, pk):
     order = get_object_or_404(Order, pk=pk)
 
     allowed_fields = {
-        'date', 'customer_name', 'phone_number', 'receiver_name',
+        'date', 'customer_name', 'customer_phone', 'receiver_name', 'receiver_phone',
         'product_name', 'address', 'comments', 'status'
     }
 
     if payload.get('status') == Order.Status.DELIVERED:
-        pass
+        if not payload.get('signature'):
+            return JsonResponse({'error': 'Signature is required to mark order as delivered.'}, status=400)
 
     # Update only allowed fields
     for field, value in payload.items():
@@ -71,12 +73,14 @@ def update_order(request, pk):
         'id': order.pk,
         'date': order.date.isoformat() if order.date else None,
         'customer_name': order.customer_name,
-        'phone_number': order.phone_number,
+        'customer_phone': order.customer_phone,
+        'receiver_phone': order.receiver_phone,
         'receiver_name': order.receiver_name,
         'product_name': order.product_name,
         'address': order.address,
         'comments': order.comments,
         'status': order.status,
+        'signature': order.signature.url if order.signature else None,
     }
     return JsonResponse({'order': data})
 
