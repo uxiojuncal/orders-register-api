@@ -12,8 +12,9 @@ class Order(models.Model):
     signature = models.ImageField(upload_to='../media/signatures/', blank=True, null=True)
 
     class Status(models.TextChoices):
-        PENDING = 'pendiente', 'Pendiente'
-        PROCESSING = 'procesando', 'Procesando'
-        DELIVERED = 'entregado', 'Entregado'
+        PENDING = 'pending'
+        PROCESSING = 'processing'
+        DELIVERED = 'delivered'
+        PROBLEMATIC = 'problematic'
 
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
