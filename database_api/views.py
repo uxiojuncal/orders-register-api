@@ -102,8 +102,6 @@ def search_orders(request):
             orders = orders.filter(receiver_name__icontains=receiver_name)
         if customer_name := request.GET.get('customer_name'):
             orders = orders.filter(customer_name__icontains=customer_name)
-        if status := request.GET.get('status'):
-            orders = orders.filter(status=status)
         if id := request.GET.get('id'):
             orders = orders.filter(id=id)
         if date := request.GET.get('date'):

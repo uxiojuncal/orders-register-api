@@ -1,11 +1,11 @@
 from django.db import models
 
 class Order(models.Model):
-    date = models.DateTimeField()
+    date = models.DateField()
     customer_name = models.CharField(max_length=255)
-    customer_phone = models.IntegerField()
+    customer_phone = models.IntegerField(blank=True, null=True)
     receiver_name = models.CharField(max_length=255)
-    receiver_phone = models.IntegerField()
+    receiver_phone = models.IntegerField(blank=True, null=True)
     product_name = models.CharField(max_length=255)
     address = models.TextField()
     comments = models.TextField(blank=True, null=True)
