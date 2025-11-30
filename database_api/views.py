@@ -4,6 +4,16 @@ from .models import Order
 import json
 from django.shortcuts import get_object_or_404
 
+def parse_phone(value):
+    # Helper function to parse phone numbers
+    if value is None or value == '':
+        return None
+    try:
+        clean_value = str(value).replace('-', '').replace(' ', '')
+        return int(clean_value)
+    except (TypeError, ValueError):
+        return None
+
 @csrf_exempt
 def create_order(request):
     # Check for correct HTTP method
@@ -26,9 +36,9 @@ def create_order(request):
     order = Order.objects.create(
         date=payload['date'],
         customer_name=payload['customer_name'],
-        customer_phone=payload['customer_phone'],
+        customer_phone=parse_phone(payload['customer_phone']),
         receiver_name=payload['receiver_name'],
-        receiver_phone=payload['receiver_phone'],
+        receiver_phone=parse_phone(payload['receiver_phone']),
         product_name=payload['product_name'],
         address=payload['address'],
         comments=payload.get('comments', ''),
@@ -73,8 +83,8 @@ def update_order(request, pk):
         'id': order.pk,
         'date': order.date.isoformat() if order.date else None,
         'customer_name': order.customer_name,
-        'customer_phone': order.customer_phone,
-        'receiver_phone': order.receiver_phone,
+        'customer_phone': parse_phone(order.customer_phone),
+        'receiver_phone': parse_phone(order.receiver_phone),
         'receiver_name': order.receiver_name,
         'product_name': order.product_name,
         'address': order.address,
