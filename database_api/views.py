@@ -29,6 +29,8 @@ def create_order(request):
     # Check for required fields
     required_fields = ['receiver_name','address', 'receiver_phone']
     for field in required_fields:
+        if payload[field] is None or payload[field] == '':
+            return JsonResponse({'error': f'Required field {field} cannot be empty'}, status=400)
         if field not in payload:
             return JsonResponse({'error': f'Missing required field: {field}'}, status=400)
         
@@ -41,7 +43,7 @@ def create_order(request):
         receiver_phone=parse_phone(payload['receiver_phone']),
         product_name=payload['product_name'],
         address=payload['address'],
-        comments=payload.get('comments', ''),
+        observations=payload.get('observations', ''),
         status=payload.get('status', Order.Status.PENDING),
         signature=payload.get('signature', None)
     )
@@ -69,8 +71,13 @@ def update_order(request, pk):
     }
 
     if payload.get('status') == Order.Status.DELIVERED:
-        if not payload.get('signature'):
+        if not order.signature:
             return JsonResponse({'error': 'Signature is required to mark order as delivered.'}, status=400)
+    
+    if 'customer_phone' in payload:
+        payload['customer_phone'] = parse_phone(payload['customer_phone'])
+    if 'receiver_phone' in payload:
+        payload['receiver_phone'] = parse_phone(payload['receiver_phone'])
 
     # Update only allowed fields
     for field, value in payload.items():
@@ -83,12 +90,12 @@ def update_order(request, pk):
         'id': order.pk,
         'date': order.date.isoformat() if order.date else None,
         'customer_name': order.customer_name,
-        'customer_phone': parse_phone(order.customer_phone),
-        'receiver_phone': parse_phone(order.receiver_phone),
+        'customer_phone': order.customer_phone,
+        'receiver_phone': order.receiver_phone,
         'receiver_name': order.receiver_name,
         'product_name': order.product_name,
         'address': order.address,
-        'comments': order.comments,
+        'observations': order.observations,
         'status': order.status,
         'signature': order.signature.url if order.signature else None,
     }
@@ -124,6 +131,24 @@ def search_orders(request):
                 return JsonResponse({'error': 'Formato de fecha inválido. Use DD-MM.'}, status=400)
         
     return JsonResponse({'orders': list(orders.values())})
+
+def upload_signature(request, pk):
+    # Check for correct HTTP method
+    if request.method != 'PATCH':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    # Retrieve the order or return 404
+    order = get_object_or_404(Order, pk=pk)
+
+    # Check if a file is provided
+    if 'signature' not in request.FILES:
+        return JsonResponse({'error': 'No signature file provided'}, status=400)
+
+    # Save the signature file
+    order.signature = request.FILES['signature']
+    order.save()
+
+    return JsonResponse({'message': 'Signature uploaded successfully'})
 
 def download_order_pdf(request, pk):
     pass

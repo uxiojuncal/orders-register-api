@@ -8,8 +8,8 @@ class Order(models.Model):
     receiver_phone = models.IntegerField(blank=True, null=True)
     product_name = models.CharField(max_length=255)
     address = models.TextField()
-    comments = models.TextField(blank=True, null=True)
-    signature = models.ImageField(upload_to='../media/signatures/', blank=True, null=True)
+    observations = models.TextField(blank=True, null=True)
+    signature = models.ImageField(upload_to='signatures/', blank=True, null=True)
 
     class Status(models.TextChoices):
         PENDING = 'pending'
