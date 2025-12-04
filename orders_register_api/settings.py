@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-dddp#ttjz$h87b3wczwr_y6vzr3k-9ofo&n)*6!_8iy5liy5*n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -132,6 +132,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+"""
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5500",
@@ -143,3 +144,4 @@ CORS_ALLOWED_ORIGINS = [
     "https://cold-pillows-juggle.loca.lt",
     "https://uxiojuncal.github.io",
 ]
+"""
