@@ -291,7 +291,7 @@ def search_orders(request):
 
 def upload_signature(request, pk):
     # Check for correct HTTP method
-    if request.method != 'PATCH':
+    if request.method not in ('PATCH', 'POST'):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
     # Retrieve the order or return 404
