@@ -7,9 +7,14 @@ from django.http import HttpResponse
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
+from reportlab.lib.colors import white
 import os
 
 REQUIRED_FIELDS = ['receiver_name', 'address', 'receiver_phone', 'customer_name']
+
+def health_check(request):
+    """Lightweight endpoint to wake up the server"""
+    return JsonResponse({'status': 'ok'})
 
 def generate_order_pdf(request, pk):
     # Get order or return 404
@@ -87,7 +92,7 @@ def generate_order_pdf(request, pk):
     p.drawString(1*inch, y, f"{order.product_name or 'N/A'}")
     y -= 0.5*inch
     
-    # Observations (kept as 'observations' - correct field name)
+    # Observations
     if order.observations:
         p.setFont("Helvetica-Bold", 14)
         p.drawString(1*inch, y, "Observaciones")
@@ -95,22 +100,53 @@ def generate_order_pdf(request, pk):
         
         p.setFont("Helvetica", 12)
         # Handle long text (wrap if needed)
-        p.drawString(1*inch, y, order.observations[:100])  # Limit length
+        p.drawString(1*inch, y, order.observations[:100])
         y -= 0.5*inch
     
-    # Signature with error handling
+    # Signature with white background
     if order.signature:
         p.setFont("Helvetica-Bold", 14)
         p.drawString(1*inch, y, "Firma del Cliente")
         y -= 0.3*inch
         
         try:
-            # Handle both local and remote storage
+            # Define signature dimensions
+            sig_width = 3*inch
+            sig_height = 1.5*inch
+            sig_x = 1*inch
+            sig_y = y - 2*inch
+            
+            # Draw white background rectangle
+            p.setFillColor(white)
+            p.rect(sig_x, sig_y, sig_width, sig_height, fill=True, stroke=True)
+            
+            # Handle both local and remote storage (Cloudinary)
             if hasattr(order.signature, 'path') and os.path.exists(order.signature.path):
-                # Local storage
-                p.drawImage(order.signature.path, 1*inch, y - 2*inch, width=3*inch, height=1.5*inch)
+                # Local storage (development)
+                p.drawImage(order.signature.path, sig_x, sig_y, width=sig_width, height=sig_height)
+            elif hasattr(order.signature, 'url'):
+                # Remote storage (Cloudinary in production)
+                # Download image from Cloudinary URL
+                import urllib.request
+                from io import BytesIO
+                from PIL import Image
+                
+                # Fetch image from Cloudinary
+                image_data = urllib.request.urlopen(order.signature.url).read()
+                image = Image.open(BytesIO(image_data))
+                
+                # Save temporarily
+                temp_path = f'/tmp/signature_{pk}.png'
+                image.save(temp_path)
+                
+                # Draw image on white background
+                p.drawImage(temp_path, sig_x, sig_y, width=sig_width, height=sig_height)
+                
+                # Clean up temp file
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
             else:
-                # Remote storage or file not found
+                # Fallback
                 p.setFont("Helvetica-Oblique", 10)
                 p.drawString(1*inch, y - 0.5*inch, "[Firma disponible en el sistema]")
         except Exception as e:
@@ -122,6 +158,8 @@ def generate_order_pdf(request, pk):
     p.save()
     
     return response
+
+# ... rest of your existing views ...
 
 def parse_phone(value):
     # Helper function to parse phone numbers
