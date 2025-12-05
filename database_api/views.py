@@ -12,6 +12,7 @@ import os
 
 REQUIRED_FIELDS = ['receiver_name', 'address', 'receiver_phone', 'customer_name']
 
+@csrf_exempt
 def health_check(request):
     """Lightweight endpoint to wake up the server"""
     return JsonResponse({'status': 'ok'})
