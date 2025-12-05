@@ -289,6 +289,7 @@ def search_orders(request):
         
     return JsonResponse({'orders': list(orders.values())})
 
+@csrf_exempt
 def upload_signature(request, pk):
     # Check for correct HTTP method
     if request.method not in ('PATCH', 'POST'):
