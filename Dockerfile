@@ -65,4 +65,4 @@ USER appuser
 EXPOSE 8000
 
 # Run migrations and start server at RUNTIME (not build time)
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear && gunicorn --bind 0.0.0.0:8000 --workers 2 orders_register_api.wsgi:application"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear && gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120 orders_register_api.wsgi:application"]
