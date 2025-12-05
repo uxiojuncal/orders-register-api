@@ -18,8 +18,21 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# Install system dependencies for psycopg2, Pillow, and reportlab
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libc6-dev \
+    libpq-dev \
+    libjpeg-dev \
+    zlib1g-dev \
+    libfreetype6-dev \
+    liblcms2-dev \
+    libtiff-dev \
+    libwebp-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create a non-privileged user that the app will run under.
-# See https://docs.docker.com/go/dockerfile-user-best-practices/
 ARG UID=10001
 RUN adduser \
     --disabled-password \
@@ -31,9 +44,6 @@ RUN adduser \
     appuser
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
-# Leverage a bind mount to requirements.txt to avoid having to copy them into
-# into this layer.
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python -m pip install -r requirements.txt
@@ -45,21 +55,14 @@ COPY . .
 RUN find . -type d -name __pycache__ -exec rm -r {} + || true
 RUN find . -type f -name '*.pyc' -delete || true
 
-
-# Create database directory with proper permissions
-RUN mkdir -p /app/db && \
-    touch /app/db.sqlite3 && \
-    chown -R appuser:appuser /app
+# Fix permissions
+RUN chown -R appuser:appuser /app
 
 # Switch to the non-privileged user to run the application.
 USER appuser
 
-# Run migrations
-RUN python manage.py migrate --noinput
-RUN python manage.py collectstatic --noinput || true
-
 # Expose the port that the application listens on.
 EXPOSE 8000
 
-# Run the application with gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "orders_register_api.wsgi:application"]
+# Run migrations and start server at RUNTIME (not build time)
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear && gunicorn --bind 0.0.0.0:8000 --workers 2 orders_register_api.wsgi:application"]
