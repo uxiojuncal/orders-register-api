@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('health/', views.health_check, name='health-check'),              # GET => health check
     path('orders/', views.create_order, name='order-create'),                     # POST => create
     path('orders/<int:pk>/', views.update_order, name='order-update'),
     path('orders/search/', views.search_orders, name='order-search'),          # GET => search with query params

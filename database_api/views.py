@@ -11,6 +11,9 @@ import os
 
 REQUIRED_FIELDS = ['receiver_name', 'address', 'receiver_phone', 'customer_name']
 
+def health_check(request):
+    return JsonResponse({'status': 'ok'}, status=200)
+
 def generate_order_pdf(request, pk):
     # Get order or return 404
     order = get_object_or_404(Order, id=pk)
