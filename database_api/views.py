@@ -270,3 +270,17 @@ def upload_signature(request, pk):
     order.save()
 
     return JsonResponse({'message': 'Signature uploaded successfully'})
+
+@csrf_exempt
+def delete_order(request, pk):
+    # Check for correct HTTP method
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    # Retrieve the order or return 404
+    order = get_object_or_404(Order, pk=pk)
+    
+    # Delete the order
+    order.delete()
+    
+    return JsonResponse({'message': 'Order deleted successfully'})

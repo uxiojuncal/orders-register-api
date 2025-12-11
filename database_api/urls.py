@@ -7,6 +7,7 @@ urlpatterns = [
     path('orders/<int:pk>/', views.update_order, name='order-update'),
     path('orders/search/', views.search_orders, name='order-search'),          # GET => search with query params
     path('orders/<int:pk>/pdf/', views.generate_order_pdf, name='order-pdf'),  # GET => download PDF
-    path('orders/<int:pk>/signature/', views.upload_signature, name='order-signature')  # PATCH => upload signature
+    path('orders/<int:pk>/signature/', views.upload_signature, name='order-signature'),  # PATCH => upload signature
+    path('orders/<int:pk>/delete/', views.delete_order, name='order-delete'),         # DELETE => delete order
 ]
 
