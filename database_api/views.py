@@ -1,7 +1,10 @@
+import json
+import os
+
+from datetime import datetime
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Order
-import json
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from reportlab.lib.pagesizes import A4
@@ -16,6 +19,22 @@ REQUIRED_FIELDS = ['receiver_name', 'address', 'receiver_phone', 'customer_name'
 def health_check(request):
     """Lightweight endpoint to wake up the server"""
     return JsonResponse({'status': 'ok'})
+
+def parse_date(value):
+    # Helper function to parse date strings
+    if value is None or value == '':
+        return None
+    if isinstance(value, str):
+        try:
+            # Try ISO format first (YYYY-MM-DD)
+            return datetime.fromisoformat(value).date()
+        except ValueError:
+            try:
+                # Try other common formats
+                return datetime.strptime(value, '%Y-%m-%d').date()
+            except ValueError:
+                return None
+    return value
 
 def generate_order_pdf(request, pk):
     # Get order or return 404
@@ -235,6 +254,10 @@ def update_order(request, pk):
         payload['customer_phone'] = parse_phone(payload['customer_phone'])
     if 'receiver_phone' in payload:
         payload['receiver_phone'] = parse_phone(payload['receiver_phone'])
+    
+    # Parse date field
+    if 'date' in payload:
+        payload['date'] = parse_date(payload['date'])
 
     # Update only allowed fields
     for field, value in payload.items():
