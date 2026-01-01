@@ -1,17 +1,122 @@
 import json
 import os
+import urllib.request
+import datetime
 
-from datetime import datetime
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Order
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
+from reportlab.lib.colors import white
+from io import BytesIO
+from reportlab.lib.utils import ImageReader
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
 
 REQUIRED_FIELDS = ['receiver_name', 'address', 'receiver_phone', 'customer_name']
+
+@csrf_exempt
+def export_orders_excel(request):
+    """Export all orders to Excel file"""
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    # Get all orders ordered by date (newest first)
+    orders = Order.objects.all().order_by('-date', '-id')
+    
+    # Create workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Pedidos"
+    
+    # Define headers
+    headers = [
+        'ID', 'Fecha', 'Estado', 'Cliente', 'Tel. Cliente',
+        'Destinatario', 'Tel. Destinatario', 'Dirección',
+        'Producto', 'Observaciones', 'Firma'
+    ]
+    
+    # Write headers with styling
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Write data
+    for row_num, order in enumerate(orders, 2):
+        # Format date
+        date_str = order.date.strftime('%d/%m/%Y') if order.date else ''
+        
+        # Format status
+        status_display = order.get_status_display() if hasattr(order, 'get_status_display') else order.status
+        
+        # Format signature
+        signature_str = 'Sí' if order.signature else 'No'
+        
+        # Write row data
+        row_data = [
+            order.id,
+            date_str,
+            status_display,
+            order.customer_name or '',
+            order.customer_phone or '',
+            order.receiver_name or '',
+            order.receiver_phone or '',
+            order.address or '',
+            order.product_name or '',
+            order.observations or '',
+            signature_str
+        ]
+        
+        for col_num, value in enumerate(row_data, 1):
+            cell = ws.cell(row=row_num, column=col_num)
+            cell.value = value
+            
+            # Color code by status
+            if col_num == 3:  # Status column
+                if order.status == Order.Status.PENDING:
+                    cell.fill = PatternFill(start_color="FFF4CC", end_color="FFF4CC", fill_type="solid")
+                elif order.status == Order.Status.IN_TRANSIT:
+                    cell.fill = PatternFill(start_color="CCE5FF", end_color="CCE5FF", fill_type="solid")
+                elif order.status == Order.Status.DELIVERED:
+                    cell.fill = PatternFill(start_color="D4EDDA", end_color="D4EDDA", fill_type="solid")
+                elif order.status == Order.Status.CANCELLED:
+                    cell.fill = PatternFill(start_color="F8D7DA", end_color="F8D7DA", fill_type="solid")
+    
+    # Auto-adjust column widths
+    for col_num in range(1, len(headers) + 1):
+        column_letter = get_column_letter(col_num)
+        max_length = 0
+        
+        for row in ws[column_letter]:
+            try:
+                if len(str(row.value)) > max_length:
+                    max_length = len(str(row.value))
+            except:
+                pass
+        
+        adjusted_width = min(max_length + 2, 50)  # Max width of 50
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Add filters to headers
+    ws.auto_filter.ref = ws.dimensions
+    
+    # Create response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=pedidos_export.xlsx'
+    
+    # Save workbook to response
+    wb.save(response)
+    
+    return response
 
 def health_check(request):
     return JsonResponse({'status': 'ok'}, status=200)
