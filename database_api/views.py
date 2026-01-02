@@ -54,10 +54,15 @@ def export_orders_excel(request):
         date_str = order.date.strftime('%d/%m/%Y') if order.date else ''
         
         # Format status
-        status_display = order.get_status_display() if hasattr(order, 'get_status_display') else order.status
+        status_display = translate_status(order.status)
         
         # Format signature
         signature_str = 'Sí' if order.signature else 'No'
+
+        # Format phone numbers as text (add apostrophe prefix)
+        customer_phone_str = f"{order.customer_phone}" if order.customer_phone else ''
+        receiver_phone_str = f"{order.receiver_phone}" if order.receiver_phone else ''
+    
         
         # Write row data
         row_data = [
@@ -65,9 +70,9 @@ def export_orders_excel(request):
             date_str,
             status_display,
             order.customer_name or '',
-            order.customer_phone or '',
+            customer_phone_str,
             order.receiver_name or '',
-            order.receiver_phone or '',
+            receiver_phone_str,
             order.address or '',
             order.product_name or '',
             order.observations or '',
@@ -82,11 +87,11 @@ def export_orders_excel(request):
             if col_num == 3:  # Status column
                 if order.status == Order.Status.PENDING:
                     cell.fill = PatternFill(start_color="FFF4CC", end_color="FFF4CC", fill_type="solid")
-                elif order.status == Order.Status.IN_TRANSIT:
+                elif order.status == Order.Status.PROCESSING:
                     cell.fill = PatternFill(start_color="CCE5FF", end_color="CCE5FF", fill_type="solid")
                 elif order.status == Order.Status.DELIVERED:
                     cell.fill = PatternFill(start_color="D4EDDA", end_color="D4EDDA", fill_type="solid")
-                elif order.status == Order.Status.CANCELLED:
+                elif order.status == Order.Status.PROBLEMATIC:
                     cell.fill = PatternFill(start_color="F8D7DA", end_color="F8D7DA", fill_type="solid")
     
     # Auto-adjust column widths
@@ -120,6 +125,17 @@ def export_orders_excel(request):
 
 def health_check(request):
     return JsonResponse({'status': 'ok'}, status=200)
+
+def translate_status(status):
+    status_map = {
+        'pending': 'Pendiente',
+        'processing': 'En Proceso',
+        'delivered': 'Entregado',
+        'problematic': 'Problemático'
+    }
+    if status not in status_map.keys():
+        return status
+    return status_map.get(status, status)
 
 def parse_date(value):
     # Helper function to parse date strings

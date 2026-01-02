@@ -11,4 +11,3 @@ urlpatterns = [
     path('orders/<int:pk>/delete/', views.delete_order, name='order-delete'),   # DELETE => delete order
     path('orders/excel/', views.export_orders_excel, name='order-excel'),  # GET => export to Excel
 ]
-
